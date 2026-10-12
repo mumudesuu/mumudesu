@@ -983,7 +983,32 @@
     "印度": { dot: "#FF9A3C", bg: "#E8813C" },
     "克羅埃西亞": { dot: "#5FC1DE", bg: "#3AA0C0" },
     "比利時": { dot: "#B080E0", bg: "#8E5BC7" },
+    "加拿大": { dot: "#F27A72", bg: "#E5584F" },
   };
+
+  // 之後新增的地區就算還沒寫進上面的表，也會自動配一個顏色、自動長出篩選按鈕，
+  // 不會再因為「不認識的地區」讓整個畫面壞掉。
+  const REGION_PALETTE = [
+    { dot: "#6FCF97", bg: "#3FA86A" },
+    { dot: "#F2C94C", bg: "#D19A12" },
+    { dot: "#56CCF2", bg: "#2D9CDB" },
+    { dot: "#F2994A", bg: "#D9772B" },
+    { dot: "#BB6BD9", bg: "#9B51E0" },
+    { dot: "#EB5757", bg: "#C94040" },
+  ];
+  function regionStyle(r){
+    if(!r) return REGIONS["全部"];
+    if(!REGIONS[r]){
+      const used = Object.keys(REGIONS).length;
+      REGIONS[r] = REGION_PALETTE[used % REGION_PALETTE.length];
+    }
+    return REGIONS[r];
+  }
+  function syncRegions(){
+    const before = Object.keys(REGIONS).length;
+    flowers.forEach(f => regionStyle(f.region));
+    if(Object.keys(REGIONS).length !== before) renderChips();
+  }
 
   // 地區對應的 IANA 時區名稱——當座標查詢失敗、或 tz-lookup 函式庫還沒載入好時
   // 的備援表。正常情況下應該用不到，因為會優先直接用座標查時區。
@@ -1185,6 +1210,7 @@
     if(pendingOps > 0) return; // 還有操作在背景送出，等送完再同步
     if(!API_URL){
       flowers = FALLBACK_FIELDS.map(normalizeField);
+      syncRegions();
       renderCards();
       setUpdateTime();
       return;
@@ -1201,6 +1227,7 @@
       if(versionAtStart !== dataVersion || pendingOps > 0) return;
       if(data.ok){
         flowers = data.fields.map(normalizeField);
+        syncRegions();
         records = (data.records || []).map(r => ({
           id: r.id,
           name: r.name,
@@ -1977,7 +2004,7 @@
         ${hiddenBadge}
         <div class="card-top">
           <div class="card-loc">📍 ${escapeHtml(f.name)}</div>
-          <span class="color-badge" style="background:${REGIONS[f.region].bg}">${escapeHtml(f.region)}</span>
+          <span class="color-badge" style="background:${regionStyle(f.region).bg}">${escapeHtml(f.region)}</span>
         </div>
         <div class="status-row" data-status-for="${f.id}">
           <span class="status-dot"></span>
