@@ -486,6 +486,82 @@
   .empty .emoji{ font-size:40px; display:block; margin-bottom:10px;}
 
   /* ---------- analysis ---------- */
+  /* ---------- 開花日程日曆 ---------- */
+  .cal-overlay{
+    position:fixed; inset:0; z-index:300;
+    background:rgba(43,70,54,0.45);
+    display:none;
+    align-items:center; justify-content:center;
+    padding:14px;
+  }
+  .cal-overlay.open{ display:flex; }
+  .cal-modal{
+    background:var(--cream);
+    border-radius:24px;
+    width:100%; max-width:560px;
+    max-height:92vh; overflow-y:auto;
+    padding:18px 16px 16px;
+    box-shadow:0 10px 0 rgba(39,97,72,0.18);
+    position:relative;
+  }
+  .cal-head{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:8px; margin-bottom:10px;
+  }
+  .cal-title{
+    font-family:"Baloo 2",sans-serif; font-weight:800; font-size:19px; color:var(--leaf-deep);
+  }
+  .cal-nav{ display:flex; gap:6px; align-items:center; }
+  .cal-nav button, .cal-close{
+    border:none; cursor:pointer;
+    font-family:"Zen Maru Gothic",sans-serif; font-weight:700; font-size:13px;
+    padding:6px 12px; border-radius:999px;
+    background:var(--white); color:var(--leaf-deep);
+    box-shadow:0 2px 0 rgba(39,97,72,0.18);
+  }
+  .cal-close{ background:var(--leaf); color:#fff; box-shadow:0 2px 0 var(--leaf-deep); }
+  .cal-week, .cal-days{
+    display:grid; grid-template-columns:repeat(7, 1fr); gap:4px;
+  }
+  .cal-week span{
+    text-align:center; font-size:12px; font-weight:800; color:#7C9686; padding:4px 0;
+  }
+  .cal-cell{
+    min-height:62px; border-radius:10px; background:var(--white);
+    padding:4px 3px; font-size:10px; line-height:1.25;
+    border:2px solid transparent; cursor:default; overflow:hidden;
+    display:flex; flex-direction:column; gap:2px;
+  }
+  .cal-cell.empty{ background:transparent; }
+  .cal-cell.has{ cursor:pointer; }
+  .cal-cell.today{ border-color:var(--leaf); }
+  .cal-cell.selected{ border-color:var(--purple); }
+  .cal-day{ font-weight:800; font-size:11px; color:var(--ink); }
+  .cal-flower{
+    border-radius:6px; padding:2px 3px; font-weight:700; word-break:break-all;
+  }
+  .cal-flower.ok{ background:#E4F3E9; color:var(--leaf-deep); }
+  .cal-flower.low{ background:#FFE3C2; color:#9A5200; }
+  .cal-flower.unknown{ background:#EFEBE0; color:#7C6F55; }
+  .cal-legend{
+    display:flex; flex-wrap:wrap; gap:10px; margin:10px 0 6px;
+    font-size:11.5px; font-weight:700; color:#5C7B6A;
+  }
+  .cal-legend i{ display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:4px; vertical-align:-1px; }
+  .cal-detail{
+    background:var(--white); border-radius:16px; padding:12px 14px; margin-top:8px;
+    font-size:13px; line-height:1.7;
+  }
+  .cal-detail h4{ margin:0 0 6px; font-size:14px; color:var(--leaf-deep); display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .cal-detail .reset{
+    border:none; background:#EFEBE0; color:#7C6F55; border-radius:999px;
+    font-family:inherit; font-weight:700; font-size:11.5px; padding:3px 10px; cursor:pointer;
+  }
+  .cal-item{ padding:6px 0; border-top:1px dashed #E3D9C4; }
+  .cal-item:first-of-type{ border-top:none; }
+  .cal-item .tag-low{ color:#B35E00; font-weight:800; }
+  .cal-item .tag-ok{ color:var(--leaf-deep); font-weight:800; }
+
   .analysis-grid{
     display:grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -653,14 +729,46 @@
 </div>
 
 <!-- ---------- 懸浮按鈕：跳到庫存分析 ---------- -->
-<button id="jumpToAnalysisBtn" type="button" style="
+<button id="jumpToAnalysisBtn" type="button" title="庫存分析" aria-label="庫存分析" style="
   position:fixed; right:18px; bottom:18px; z-index:200;
-  display:inline-flex; align-items:center; gap:6px;
+  width:50px; height:50px; padding:0;
+  display:inline-flex; align-items:center; justify-content:center;
   background:#B080E0; color:#fff; border:none; cursor:pointer;
-  font-family:'Zen Maru Gothic','Noto Sans TC',sans-serif; font-weight:700; font-size:13.5px;
-  padding:12px 18px; border-radius:999px; box-shadow:0 4px 0 #7A4FB5;
+  font-size:22px; line-height:1; border-radius:50%; box-shadow:0 4px 0 #7A4FB5;
   transition:transform .15s ease;
-" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">📊 庫存分析</button>
+" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">📊</button>
+
+<!-- ---------- 懸浮按鈕：開花日程日曆 ---------- -->
+<button id="openCalendarBtn" type="button" title="開花日程" aria-label="開花日程" style="
+  position:fixed; right:18px; bottom:78px; z-index:200;
+  width:50px; height:50px; padding:0;
+  display:inline-flex; align-items:center; justify-content:center;
+  background:#3E9166; color:#fff; border:none; cursor:pointer;
+  font-size:22px; line-height:1; border-radius:50%; box-shadow:0 4px 0 #276148;
+  transition:transform .15s ease;
+" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">📅</button>
+
+<div class="cal-overlay" id="calOverlay">
+  <div class="cal-modal" role="dialog" aria-label="強開團開花日程">
+    <div class="cal-head">
+      <span class="cal-title" id="calTitle">開花日程</span>
+      <div class="cal-nav">
+        <button type="button" id="calPrev">‹</button>
+        <button type="button" id="calToday">今天</button>
+        <button type="button" id="calNext">›</button>
+        <button type="button" class="cal-close" id="calClose">關閉</button>
+      </div>
+    </div>
+    <div class="cal-week"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+    <div class="cal-days" id="calDays"></div>
+    <div class="cal-legend">
+      <span><i style="background:#FFE3C2"></i>庫存偏低（精華＋花瓣＜2000），建議先補</span>
+      <span><i style="background:#E4F3E9"></i>庫存足夠</span>
+      <span><i style="background:#EFEBE0"></i>庫存表找不到該花</span>
+    </div>
+    <div class="cal-detail" id="calDetail"></div>
+  </div>
+</div>
 
 <script>
   /* =====================================================================
@@ -715,6 +823,7 @@
   let speciesCount = 0;
   let specialEssence = 0;
   let lastUpdated = '';
+  let schedule = [];     // [{date:'2026-10-15', species, color, note}] —— 來自「開花日程」工作表
 
   let isAdmin = false;
   let idToken = null;
@@ -755,6 +864,7 @@
         items = data.items;
         specialEssence = data.specialEssence || 0;
         lastUpdated = data.lastUpdated || '';
+        schedule = data.schedule || [];
         afterLoad();
         const now2 = new Date();
         const hh2 = String(now2.getHours()).padStart(2,'0');
@@ -789,6 +899,130 @@
     renderColorChips();
     renderGrid();
     renderAnalysis();
+    if(calOpen) renderCalendar();
+  }
+
+  /* ---------- 開花日程日曆 ---------- */
+  const LOW_STOCK_THRESHOLD = 2000;   // 精華＋花瓣 低於這個數字就提醒補庫存
+  let calOpen = false;
+  let calYear, calMonth;              // calMonth: 0-11
+  let calSelected = null;             // 'yyyy-mm-dd' 或 null（顯示近期提醒）
+
+  function todayStr(){
+    // 以台灣時間（UTC+8）為準
+    return new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Taipei' });
+  }
+  function pad2(n){ return String(n).padStart(2, '0'); }
+
+  function stockOf(entry){
+    const item = items.find(i => i.species === entry.species && i.color === entry.color);
+    if(!item) return { found:false };
+    const total = item.essence + item.petal;
+    return { found:true, essence:item.essence, petal:item.petal, total, low: total < LOW_STOCK_THRESHOLD };
+  }
+  function stockClass(entry){
+    const s = stockOf(entry);
+    return !s.found ? 'unknown' : (s.low ? 'low' : 'ok');
+  }
+
+  function scheduleOn(dateStr){
+    return schedule.filter(s => s.date === dateStr);
+  }
+
+  function renderCalendar(){
+    const first = new Date(calYear, calMonth, 1);
+    const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+    const startDow = first.getDay();
+    const today = todayStr();
+
+    document.getElementById('calTitle').textContent = `📅 ${calYear} 年 ${calMonth + 1} 月`;
+
+    let html = '';
+    for(let i = 0; i < startDow; i++) html += `<div class="cal-cell empty"></div>`;
+    for(let d = 1; d <= daysInMonth; d++){
+      const ds = `${calYear}-${pad2(calMonth + 1)}-${pad2(d)}`;
+      const entries = scheduleOn(ds);
+      const cls = ['cal-cell'];
+      if(entries.length) cls.push('has');
+      if(ds === today) cls.push('today');
+      if(ds === calSelected) cls.push('selected');
+      const flowers = entries.map(e =>
+        `<span class="cal-flower ${stockClass(e)}">${escapeHtml(e.species)}</span>`
+      ).join('');
+      html += `<div class="${cls.join(' ')}" data-date="${ds}"><span class="cal-day">${d}</span>${flowers}</div>`;
+    }
+    const daysEl = document.getElementById('calDays');
+    daysEl.innerHTML = html;
+    daysEl.querySelectorAll('.cal-cell[data-date]').forEach(cell => {
+      cell.addEventListener('click', () => {
+        calSelected = cell.dataset.date;
+        renderCalendar();
+      });
+    });
+
+    renderCalendarDetail();
+  }
+
+  function entryHtml(e, showDate){
+    const s = stockOf(e);
+    const colorEmoji = (COLOR_META[e.color] || {}).emoji || '';
+    const head = `${showDate ? escapeHtml(e.date.slice(5)) + '　' : ''}<b>${escapeHtml(e.species)}</b>（${colorEmoji}${escapeHtml(e.color)}）`;
+    let stock;
+    if(!s.found){
+      stock = `<span style="color:#A6947A;">庫存表找不到這個花種／顏色</span>`;
+    } else if(s.low){
+      stock = `✨${s.essence}／🌸${s.petal}　共${s.total}　<span class="tag-low">庫存偏低，建議當天先補</span>`;
+    } else {
+      stock = `✨${s.essence}／🌸${s.petal}　共${s.total}　<span class="tag-ok">庫存足夠</span>`;
+    }
+    const note = e.note ? `<div style="color:#7C6F55;">備註：${escapeHtml(e.note)}</div>` : '';
+    return `<div class="cal-item">${head}<div>${stock}</div>${note}</div>`;
+  }
+
+  function renderCalendarDetail(){
+    const box = document.getElementById('calDetail');
+    if(calSelected){
+      const entries = scheduleOn(calSelected);
+      box.innerHTML = `
+        <h4><span>${escapeHtml(calSelected)}</span><button class="reset" type="button" id="calResetBtn">看近期提醒</button></h4>
+        ${entries.length ? entries.map(e => entryHtml(e, false)).join('') : '<div style="color:#A6947A;">這天沒有排開花日程</div>'}
+      `;
+      document.getElementById('calResetBtn').addEventListener('click', () => {
+        calSelected = null;
+        renderCalendar();
+      });
+      return;
+    }
+
+    // 近期提醒：今天起 7 天內
+    const today = todayStr();
+    const end = new Date(today + 'T00:00:00');
+    end.setDate(end.getDate() + 6);
+    const endStr = `${end.getFullYear()}-${pad2(end.getMonth() + 1)}-${pad2(end.getDate())}`;
+    const upcoming = schedule
+      .filter(s => s.date >= today && s.date <= endStr)
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    box.innerHTML = `
+      <h4><span>近 7 天開花提醒</span></h4>
+      ${upcoming.length
+        ? upcoming.map(e => entryHtml(e, true)).join('')
+        : '<div style="color:#A6947A;">近 7 天沒有排開花日程（日程請填在試算表「開花日程」工作表）</div>'}
+    `;
+  }
+
+  function openCalendar(){
+    const t = todayStr();
+    calYear = Number(t.slice(0, 4));
+    calMonth = Number(t.slice(5, 7)) - 1;
+    calSelected = null;
+    calOpen = true;
+    document.getElementById('calOverlay').classList.add('open');
+    renderCalendar();
+  }
+  function closeCalendar(){
+    calOpen = false;
+    document.getElementById('calOverlay').classList.remove('open');
   }
 
   /* ---------- 庫存分析：精華 / 花瓣 最高最低前五名 ---------- */
@@ -887,7 +1121,7 @@
 
     html += `
       <div class="analysis-card">
-        <h3>📦 補倉建議 Top 5</h3>
+        <h3>📦 補倉建議 Top 5（精華＋花瓣＜2000）</h3>
         <ul class="rank-list">${lowStockListHtml(topLowStock(5, 2000))}</ul>
       </div>
     `;
@@ -1236,6 +1470,28 @@
   document.getElementById('refreshBtn').addEventListener('click', loadData);
   document.getElementById('jumpToAnalysisBtn').addEventListener('click', () => {
     document.getElementById('analysisSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  /* ---------------- 開花日程日曆：按鈕事件 ---------------- */
+  document.getElementById('openCalendarBtn').addEventListener('click', openCalendar);
+  document.getElementById('calClose').addEventListener('click', closeCalendar);
+  document.getElementById('calOverlay').addEventListener('click', (e) => {
+    if(e.target.id === 'calOverlay') closeCalendar();   // 點背景關閉
+  });
+  document.getElementById('calPrev').addEventListener('click', () => {
+    calMonth--; if(calMonth < 0){ calMonth = 11; calYear--; }
+    renderCalendar();
+  });
+  document.getElementById('calNext').addEventListener('click', () => {
+    calMonth++; if(calMonth > 11){ calMonth = 0; calYear++; }
+    renderCalendar();
+  });
+  document.getElementById('calToday').addEventListener('click', () => {
+    const t = todayStr();
+    calYear = Number(t.slice(0, 4));
+    calMonth = Number(t.slice(5, 7)) - 1;
+    calSelected = null;
+    renderCalendar();
   });
 
   /* ---------------- 批次貼上（截圖辨識結果） ---------------- */
