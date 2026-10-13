@@ -535,7 +535,8 @@
   .rec-list{ display:flex; flex-direction:column; gap:8px; padding-bottom:14px; }
   .rec-group{ font-size:12px; font-weight:700; color:#7C9686; margin:6px 0 0; }
   .rec-row{
-    display:grid; grid-template-columns: 1.3fr 1fr auto; gap:8px 12px; align-items:center;
+    /* 欄寬固定，每一列的花種欄才會上下對齊（不管有沒有在倒數） */
+    display:grid; grid-template-columns: minmax(0,1.2fr) minmax(0,1fr) 150px 34px; gap:8px 12px; align-items:center;
     background:#EFF7F1; border-radius:14px; padding:9px 12px; font-size:13.5px; font-weight:700;
   }
   .rec-row.harvest{ background:#FFF6DC; }
@@ -543,6 +544,16 @@
   .rec-row.ended{ background:#F3F1EC; color:#7A7468; }
   .rec-name small{ display:block; font-weight:500; font-size:11.5px; opacity:.75; }
   .rec-flower{ font-weight:700; }
+  .rec-flower, .rec-name{ overflow-wrap:anywhere; }
+  .rec-copy{
+    width:34px; height:34px; border:none; border-radius:50%; cursor:pointer;
+    background:#fff; font-size:16px; line-height:1;
+    box-shadow:0 2px 0 rgba(43,70,54,0.15);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .rec-copy:hover{ background:#FFF3C4; }
+  .rec-copy:active{ transform:translateY(1px) scale(.94); }
+  .rec-copy.copied{ background:var(--leaf); }
   .rec-flower.empty{ opacity:.5; font-weight:500; }
   .rec-time{ text-align:right; font-family:"Baloo 2",monospace; font-size:15px; white-space:nowrap; }
   .rec-time small{ display:block; font-family:"Zen Maru Gothic",sans-serif; font-size:11.5px; font-weight:500; opacity:.8; }
@@ -554,9 +565,11 @@
   .rec-more:hover{ background:#D2E9D9; }
   .rec-empty{ text-align:center; color:#7C9686; font-size:13px; padding:8px 0 14px; }
   @media (max-width:520px){
-    .rec-row{ grid-template-columns: 1fr auto; }
-    .rec-flower{ grid-column:1; }
+    .rec-row{ grid-template-columns: minmax(0,1fr) 132px 34px; }
+    .rec-name{ grid-column:1; grid-row:1; }
+    .rec-flower{ grid-column:1; grid-row:2; }
     .rec-time{ grid-row:1 / span 2; grid-column:2; }
+    .rec-copy, .rec-copy-ph{ grid-row:1 / span 2; grid-column:3; }
   }
 
   /* ---------- cards grid ---------- */
@@ -1786,6 +1799,10 @@
 
     const rowHtml = (r, live) => {
       const startStr = r.startedAt ? formatCheckedTime(r.startedAt) : '—';
+      const srcField = flowers.find(x => x.id === r.id);
+      const copyHtml = (srcField && srcField.coord)
+        ? `<button type="button" class="rec-copy" data-id="${escapeHtml(String(r.id))}" title="複製座標" aria-label="複製 ${escapeHtml(r.name)} 的座標">📋</button>`
+        : `<span class="rec-copy-ph"></span>`;
       let cls = 'rec-row ended';
       let timeHtml;
       if(live){
@@ -1799,6 +1816,7 @@
         <div class="rec-name">${escapeHtml(r.name)}<small>${escapeHtml(r.region || '')}</small></div>
         <div class="rec-flower ${r.flowerType ? '' : 'empty'}">🌼 ${r.flowerType ? escapeHtml(r.flowerType) : '未設定花種'}</div>
         ${timeHtml}
+        ${copyHtml}
       </div>`;
     };
 
@@ -1835,6 +1853,21 @@
   });
 
   document.getElementById('recList').addEventListener('click', e => {
+    const copyBtn = e.target && e.target.closest ? e.target.closest('.rec-copy') : null;
+    if(copyBtn){
+      const f = flowers.find(x => x.id === copyBtn.dataset.id);
+      if(f && f.coord){
+        copyToClipboard(f.coord, () => {
+          copyBtn.textContent = '✅';
+          copyBtn.classList.add('copied');
+          setTimeout(() => {
+            copyBtn.textContent = '📋';
+            copyBtn.classList.remove('copied');
+          }, 1400);
+        });
+      }
+      return;
+    }
     if(e.target && e.target.id === 'recMore'){
       recExpanded = !recExpanded;
       renderRecords();
