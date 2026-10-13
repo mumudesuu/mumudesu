@@ -521,18 +521,18 @@
   }
   .cal-close{ background:var(--leaf); color:#fff; box-shadow:0 2px 0 var(--leaf-deep); }
   .cal-week, .cal-days{
-    display:grid; grid-template-columns:repeat(7, 1fr); gap:4px;
+    display:grid; grid-template-columns:repeat(7, minmax(0, 1fr)); gap:4px;
   }
   .cal-week span{
     text-align:center; font-size:12px; font-weight:800; color:#7C9686; padding:4px 0;
   }
   .cal-cell{
-    min-height:62px; border-radius:10px; background:var(--white);
+    min-height:54px; border-radius:10px; background:var(--white);
     padding:4px 3px; font-size:10px; line-height:1.25;
     border:2px solid transparent; cursor:default; overflow:hidden;
     display:flex; flex-direction:column; gap:2px;
   }
-  .cal-cell.empty{ background:transparent; }
+  .cal-pad{ min-height:0; }
   .cal-cell.has{ cursor:pointer; }
   .cal-cell.today{ border-color:var(--leaf); }
   .cal-cell.selected{ border-color:var(--purple); }
@@ -938,7 +938,7 @@
     document.getElementById('calTitle').textContent = `📅 ${calYear} 年 ${calMonth + 1} 月`;
 
     let html = '';
-    for(let i = 0; i < startDow; i++) html += `<div class="cal-cell empty"></div>`;
+    for(let i = 0; i < startDow; i++) html += `<div class="cal-pad"></div>`;
     for(let d = 1; d <= daysInMonth; d++){
       const ds = `${calYear}-${pad2(calMonth + 1)}-${pad2(d)}`;
       const entries = scheduleOn(ds);
