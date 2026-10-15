@@ -505,17 +505,23 @@
     position:relative;
   }
   .cal-head{
-    display:flex; align-items:center; justify-content:space-between;
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap;
     gap:8px; margin-bottom:10px;
   }
   .cal-title{
-    font-family:"Baloo 2",sans-serif; font-weight:800; font-size:19px; color:var(--leaf-deep);
+    font-family:"Baloo 2",sans-serif; font-weight:800; font-size:17px; color:var(--leaf-deep);
+    white-space:nowrap; display:inline-flex; align-items:center; gap:4px;
   }
-  .cal-nav{ display:flex; gap:6px; align-items:center; }
+  .cal-nav{ display:flex; gap:4px; align-items:center; margin-left:auto; }
+  .cal-sel{
+    font-family:"Baloo 2","Zen Maru Gothic",sans-serif; font-weight:800; font-size:15px;
+    color:var(--leaf-deep); background:var(--white);
+    border:2px solid #D9E8DD; border-radius:10px; padding:1px 2px; cursor:pointer;
+  }
   .cal-nav button, .cal-close{
     border:none; cursor:pointer;
     font-family:"Zen Maru Gothic",sans-serif; font-weight:700; font-size:13px;
-    padding:6px 12px; border-radius:999px;
+    padding:6px 10px; border-radius:999px; white-space:nowrap;
     background:var(--white); color:var(--leaf-deep);
     box-shadow:0 2px 0 rgba(39,97,72,0.18);
   }
@@ -751,7 +757,10 @@
 <div class="cal-overlay" id="calOverlay">
   <div class="cal-modal" role="dialog" aria-label="強開團開花日程">
     <div class="cal-head">
-      <span class="cal-title" id="calTitle">開花日程</span>
+      <span class="cal-title" id="calTitle">📅
+        <select id="calYearSel" class="cal-sel" aria-label="年份"></select> 年
+        <select id="calMonthSel" class="cal-sel" aria-label="月份"></select> 月
+      </span>
       <div class="cal-nav">
         <button type="button" id="calPrev">‹</button>
         <button type="button" id="calToday">今天</button>
@@ -935,7 +944,19 @@
     const startDow = first.getDay();
     const today = todayStr();
 
-    document.getElementById('calTitle').textContent = `📅 ${calYear} 年 ${calMonth + 1} 月`;
+    // 年份選項：日程裡出現過的年份 + 今年、明年 + 目前顯示的年份
+    const nowY = Number(todayStr().slice(0, 4));
+    const yearSet = new Set([nowY, nowY + 1, calYear]);
+    schedule.forEach(sc => yearSet.add(Number(sc.date.slice(0, 4))));
+    const years = [...yearSet].filter(n => n > 1999).sort((a, b) => a - b);
+    const ySel = document.getElementById('calYearSel');
+    const mSel = document.getElementById('calMonthSel');
+    ySel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+    ySel.value = String(calYear);
+    if(!mSel.options.length){
+      mSel.innerHTML = Array.from({ length: 12 }, (_, i) => `<option value="${i}">${i + 1}</option>`).join('');
+    }
+    mSel.value = String(calMonth);
 
     let html = '';
     for(let i = 0; i < startDow; i++) html += `<div class="cal-pad"></div>`;
@@ -1477,6 +1498,12 @@
   document.getElementById('calClose').addEventListener('click', closeCalendar);
   document.getElementById('calOverlay').addEventListener('click', (e) => {
     if(e.target.id === 'calOverlay') closeCalendar();   // 點背景關閉
+  });
+  document.getElementById('calYearSel').addEventListener('change', (e) => {
+    calYear = Number(e.target.value); calSelected = null; renderCalendar();
+  });
+  document.getElementById('calMonthSel').addEventListener('change', (e) => {
+    calMonth = Number(e.target.value); calSelected = null; renderCalendar();
   });
   document.getElementById('calPrev').addEventListener('click', () => {
     calMonth--; if(calMonth < 0){ calMonth = 11; calYear--; }
