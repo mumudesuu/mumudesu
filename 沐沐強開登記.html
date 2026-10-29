@@ -114,7 +114,7 @@
 <div id="toast" role="status"></div>
 <script>
 // ====== 設定 ======
-const API = 'https://script.google.com/macros/s/你的部署ID/exec'; // Apps Script 網頁應用程式網址
+const API = 'https://script.google.com/macros/s/AKfycbwRHa48XDtweME9luJbC9YDFq6-QGebeXFMNqRv4AmgUv5If7ERICbScK1hyWkFEUPu/exec'; // Apps Script 網頁應用程式網址
 const CLIENT_ID = '1001037373208-3sdt3t6aekf1v0efidd53ob62m92t2nl.apps.googleusercontent.com'; // 與庫存網站相同，必須和 Code.gs 的 CLIENT_ID 一致
 
 const $ = s => document.querySelector(s), app = $('#app');
@@ -122,8 +122,12 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 let token = sessionStorage.getItem('tk') || '';
 
 async function api(a, d = {}) {
-  const r = await fetch(API, { method: 'POST', body: JSON.stringify({ a, ...d }) });
-  const j = await r.json();
+  if (API.includes('你的部署ID')) throw new Error('尚未設定 API 網址，請把 Apps Script 部署網址填入網頁最上方的 API');
+  let r, j;
+  try { r = await fetch(API, { method: 'POST', body: JSON.stringify({ a, ...d }) }); }
+  catch (e) { throw new Error('無法連線到後端：請確認 API 網址正確，且 Apps Script 已部署為「所有人」都能存取'); }
+  try { j = await r.json(); }
+  catch (e) { throw new Error('後端回應異常：請確認 Apps Script 已重新部署最新版本'); }
   if (j.error) throw new Error(j.error);
   return j;
 }
