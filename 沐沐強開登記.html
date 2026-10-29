@@ -143,7 +143,7 @@ function pill() {
 
 const fm = s => s ? s.slice(5, 10).replace('-', '/') + ' ' + s.slice(11) : '';
 const win = e => fm(e.bs) + '–' + (e.be.slice(0, 10) === e.bs.slice(0, 10) ? e.be.slice(11) : fm(e.be));
-const CH = { '領取中': 'on', '已額滿': 'full', '流標': 'void', '尚未開始': 'soon' };
+const CH = { '登記中': 'on', '已額滿': 'full', '流標': 'void', '尚未開始': 'soon' };
 const chip = e => `<span class="chip ${CH[e.status] || ''}">${e.status}</span>`;
 const opts = (n, sel) => Array.from({ length: n }, (_, i) => `<option ${i + 1 === sel ? 'selected' : ''}>${i + 1}</option>`).join('');
 
@@ -166,7 +166,7 @@ async function home() {
   const d = await api('list');
   app.innerHTML = (d.notice ? `<div class="notice">${esc(d.notice).replace(/\n/g, '<br>')}</div>` : '') +
     (d.events.length ? d.events.map(e => `<a class="card" href="#e/${e.id}"><h3>${esc(e.name)} ${chip(e)}</h3>
-      <div class="muted">🌸 開花 ${win(e)}<br>⏰ 停止領取 ${fm(e.ce)}</div>${meter(e)}${stats(e)}</a>`).join('') : '<p class="muted">目前沒有開團，請等團主公告 🌱</p>');
+      <div class="muted">🌸 開花 ${win(e)}<br>⏰ 停止登記 ${fm(e.ce)}</div>${meter(e)}${stats(e)}</a>`).join('') : '<p class="muted">目前沒有開團，請等團主公告 🌱</p>');
 }
 
 function coordsHtml(t) {
@@ -181,8 +181,8 @@ async function detail(id) {
   const d = await api('get', { id }), e = d.event, canReg = e.open && e.remaining > 0;
   app.innerHTML = `<a class="back" href="#">‹ 全部開團</a>
   <div class="panel" style="padding:16px 18px"><h2>${esc(e.name)} ${chip(e)}</h2>
-  <dl class="facts"><dt>🌼 花種</dt><dd>${esc(e.flower)}</dd><dt>🌸 開花時間</dt><dd>${win(e)}</dd><dt>▶️ 開始領取</dt><dd>${fm(e.cs)}</dd>
-  <dt>⏰ 停止領取</dt><dd>${fm(e.ce)}</dd><dt>🎫 每人上限</dt><dd>${e.limit} 朵</dd><dt>👥 最低人數</dt><dd>${e.min} 人，未達流標</dd></dl>
+  <dl class="facts"><dt>🌼 花種</dt><dd>${esc(e.flower)}</dd><dt>🌸 開花時間</dt><dd>${win(e)}</dd><dt>📍 座標開放</dt><dd>${fm(e.ca)}</dd>
+  <dt>⏰ 停止登記</dt><dd>${fm(e.ce)}</dd><dt>🎫 每人上限</dt><dd>${e.limit} 朵</dd><dt>🚩 流標條件</dt><dd>認領總數未達 ${e.min} 朵</dd></dl>
   ${meter(e)}${stats(e)}${e.note ? `<div class="notice" style="margin-top:12px">${esc(e.note).replace(/\n/g, '<br>')}</div>` : ''}</div>
   ${canReg ? `<section><h3>🌱 認領種植數量</h3>
     <label>遊戲暱稱<input id="nm" maxlength="20" autocomplete="off"></label>
@@ -201,7 +201,7 @@ async function detail(id) {
   $('#lk').onclick = () => run(async () => {
     const code = $('#q').value, m = await api('mine', { id, code });
     $('#mine').innerHTML = m.list.length ? m.list.map(r => `<div class="mine"><b>${esc(r.n)}</b> 認領 ${r.c} 朵
-      ${r.coords != null ? coordsHtml(r.coords) : (e.coordsOpen ? '' : '<p class="muted">座標尚未開放查詢。</p>')}
+      ${r.coords != null ? coordsHtml(r.coords) : (e.coordsOpen ? '' : `<p class="muted">座標尚未開放，預計 ${fm(e.ca)} 開放查詢。</p>`)}
       ${m.full && e.open ? `<div class="row"><select id="nc">${opts(Math.min(e.limit, e.remaining + r.c), r.c)}</select><button id="sv">儲存顆數</button><button class="danger" id="cx">取消登記</button></div>` : ''}</div>`).join('')
       : '<p class="muted">找不到登記，請確認好友碼。</p>';
     if ($('#sv')) {
@@ -226,38 +226,52 @@ async function adminPage() {
   try { await adm('check'); } catch (e) { logout(); toast(e.message, true); return adminPage(); }
   pill();
   const d = await api('list');
-  app.innerHTML = `<h2>👑 團主後台</h2><div class="row" style="margin:0 0 6px"><button class="ghost" id="out">登出</button></div>
+  app.innerHTML = `<h2>👑 團主後台</h2><div class="notice" style="margin-bottom:10px">新增開團只要設定「開花時間」，其他時間會自動算好：<br>① 開放登記：按下儲存就立刻開放，之後可隨時修改顆數<br>② 座標開放：開花前 5 分鐘<br>③ 停止登記：開花結束（開花後 10 分鐘）<br>團主也可以登記：點開團旁的「前往登記頁」，就能像一般參與者一樣登記。</div><div class="row" style="margin:0 0 6px"><button class="ghost" id="out">登出</button></div>
   <section><h3>📣 首頁公告</h3><textarea id="nt">${esc(d.notice)}</textarea><div class="row"><button id="nts">儲存公告</button></div></section>
   <section><h3>🌸 開團</h3><div class="row" style="margin-top:0"><button id="new">＋ 新增開團</button></div><div id="form"></div>
-  ${d.events.map(e => `<div class="rg"><b>${esc(e.name)}</b> ${chip(e)}<div class="muted">${win(e)}　${e.claimed}/${e.total}（${e.people} 人）　座標${e.coordsOpen ? '已開放' : '未開放'}</div>
+  ${d.events.map(e => `<div class="rg"><b>${esc(e.name)}</b> ${chip(e)}<div class="muted">🌸 開花 ${win(e)}<br>📍 座標 ${fm(e.ca)} 開放　⏰ 停止登記 ${fm(e.ce)}<br>已領 ${e.claimed} / ${e.total} 朵（${e.people} 人），${e.min} 朵以下流標</div>
     <div class="row"><button class="ghost" data-a="regs" data-id="${e.id}">名單與座標</button><button class="ghost" data-a="edit" data-id="${e.id}">編輯</button>
-    <button class="ghost" data-a="tog" data-id="${e.id}">${e.coordsOpen ? '關閉座標查詢' : '開放座標查詢'}</button><button class="danger" data-a="del" data-id="${e.id}">刪除</button></div>
+    <button class="ghost" data-a="go" data-id="${e.id}">前往登記頁</button><button class="danger" data-a="del" data-id="${e.id}">刪除</button></div>
     <div id="r-${e.id}"></div></div>`).join('')}</section>`;
   const byId = Object.fromEntries(d.events.map(e => [e.id, e]));
   $('#out').onclick = () => { logout(); route(); };
   $('#nts').onclick = () => run(async () => { await adm('setNotice', { text: $('#nt').value }); toast('公告已儲存'); });
-  $('#new').onclick = () => form({ limit: 5, total: 25, min: 10, name: '', flower: '', bs: '', be: '', cs: '', ce: '', note: '' });
+  $('#new').onclick = () => form({ limit: 5, total: 25, min: 10, name: '', flower: '', bs: '', note: '' });
   app.onclick = ev => { const b = ev.target.closest('[data-a]'); if (!b) return; const e = byId[b.dataset.id];
     run(async () => {
       if (b.dataset.a === 'edit') form(e);
-      else if (b.dataset.a === 'tog') { await adm('save', { e: { ...e, coordsOpen: !e.coordsOpen } }); toast(e.coordsOpen ? '已關閉座標查詢' : '已開放座標查詢'); adminPage(); }
+      else if (b.dataset.a === 'go') location.hash = '#e/' + e.id;
       else if (b.dataset.a === 'del') { if (confirm('刪除「' + e.name + '」？')) { await adm('del', { id: e.id }); adminPage(); } }
       else if (b.dataset.a === 'regs') regs(e);
     }); };
 }
 
 function form(e) {
-  const v = (k, t = 'text') => `<input id="f-${k}" type="${t}" value="${esc(t === 'datetime-local' ? toL(e[k]) : e[k])}">`;
-  $('#form').innerHTML = `<div class="rg"><label>活動名稱${v('name')}</label><label>花種${v('flower')}</label>
-  <label>開花開始${v('bs', 'datetime-local')}</label><label>開花結束${v('be', 'datetime-local')}</label>
-  <label>開始領取${v('cs', 'datetime-local')}</label><label>停止領取（登記截止）${v('ce', 'datetime-local')}</label>
-  <label>每人上限（朵）${v('limit', 'number')}</label><label>總數（朵）${v('total', 'number')}</label><label>最低人數（未達流標）${v('min', 'number')}</label>
+  const tpe = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10); // 台灣今天日期
+  const [dd, tt] = (e.bs || (tpe + ' 19:30')).split(' '), [hh, mm] = tt.split(':');
+  const sel = (id, n, cur) => `<select id="${id}">` + Array.from({ length: n }, (_, i) => { const v = String(i).padStart(2, '0'); return `<option ${v === cur ? 'selected' : ''}>${v}</option>`; }).join('') + '</select>';
+  const addMin = (str, m) => { const [d, t] = str.split(' '), [y, mo, da] = d.split('-').map(Number), [h, mi] = t.split(':').map(Number);
+    const x = new Date(Date.UTC(y, mo - 1, da, h, mi + m)).toISOString(); return x.slice(0, 10) + ' ' + x.slice(11, 16); };
+  $('#form').innerHTML = `<div class="rg"><h3>${e.id ? '編輯開團' : '新增開團'}</h3>
+  <label>花種<input id="f-flower" value="${esc(e.flower)}" placeholder="例如：白色豌豆花"></label>
+  <label>活動名稱（留空會自動產生，例如 10/25白色豌豆花強開團）<input id="f-name" value="${esc(e.name)}"></label>
+  <label>開花日期<input id="f-d" type="date" value="${dd}"></label>
+  <label>開花時間（24 小時制）</label>
+  <div class="row" style="margin-top:0">${sel('f-h', 24, hh)}<b>：</b>${sel('f-m', 60, mm)}</div>
+  <div class="notice" id="pv" style="margin:12px 0"></div>
+  <label>每人上限（朵）<input id="f-limit" type="number" min="1" value="${e.limit}"></label>
+  <label>開放名額（朵）<input id="f-total" type="number" min="1" value="${e.total}"></label>
+  <label>最低認領總數（朵），未達則流標<input id="f-min" type="number" min="0" value="${e.min}"></label>
   <label>備註<textarea id="f-note">${esc(e.note)}</textarea></label>
-  <label><input type="checkbox" id="f-co" ${e.coordsOpen ? 'checked' : ''}>開放參與者用末 4 碼查詢座標</label>
-  <div class="row"><button id="fs">儲存</button></div></div>`;
+  <div class="row"><button id="fs">儲存</button><button class="ghost" id="fx">取消</button></div></div>`;
+  const bsv = () => $('#f-d').value + ' ' + $('#f-h').value + ':' + $('#f-m').value;
+  const pv = () => { $('#pv').innerHTML = !$('#f-d').value ? '請先選擇開花日期' :
+    `🌸 開花：${fm(bsv())} – ${addMin(bsv(), 10).slice(11)}<br>📍 座標開放：${fm(addMin(bsv(), -5))}<br>⏰ 停止登記：${fm(addMin(bsv(), 10))}<br>✅ 開放登記：${e.id ? '維持原本的開放時間' : '按下儲存就立刻開放，之後可隨時修改'}`; };
+  ['f-d', 'f-h', 'f-m'].forEach(i => $('#' + i).onchange = pv); pv();
+  $('#fx').onclick = () => { $('#form').innerHTML = ''; };
   $('#fs').onclick = () => run(async () => {
-    const g = k => $('#f-' + k).value, o = { id: e.id, name: g('name'), flower: g('flower'), bs: fromL(g('bs')), be: fromL(g('be')), cs: fromL(g('cs')), ce: fromL(g('ce')),
-      limit: +g('limit'), total: +g('total'), min: +g('min'), note: g('note'), coordsOpen: $('#f-co').checked };
+    if (!$('#f-d').value) throw new Error('請選擇開花日期');
+    const o = { id: e.id, name: $('#f-name').value, flower: $('#f-flower').value.trim(), bs: bsv(), limit: +$('#f-limit').value, total: +$('#f-total').value, min: +$('#f-min').value, note: $('#f-note').value };
     await adm('save', { e: o }); toast('已儲存 🌸'); adminPage();
   });
 }
