@@ -106,7 +106,8 @@
   <header>
     <h1><a href="#">沐沐強開登記</a></h1>
     <p class="sub">皮克敏強開團認領登記 🌱</p>
-    <div class="admin-pill" id="pill"><span id="pillText">🔒 訪客模式</span><a href="#admin" id="pillLink">團主登入</a></div>
+    <div class="admin-pill" id="pill"></div>
+    <div style="margin-top:8px;font-size:12px"><a href="#admin" id="adminLink" style="color:#9AA88E">團主登入</a></div>
   </header>
   <div id="app"></div>
   <footer class="credit">🌷 本頁面為強開團認領登記，由沐沐維護 🌷</footer>
@@ -117,9 +118,11 @@
 const API = 'https://script.google.com/macros/s/AKfycbwRHa48XDtweME9luJbC9YDFq6-QGebeXFMNqRv4AmgUv5If7ERICbScK1hyWkFEUPu/exec'; // Apps Script 網頁應用程式網址
 const CLIENT_ID = '1001037373208-3sdt3t6aekf1v0efidd53ob62m92t2nl.apps.googleusercontent.com'; // 與庫存網站相同，必須和 Code.gs 的 CLIENT_ID 一致
 
-const $ = s => document.querySelector(s), app = $('#app');
+const $ = (s, r) => (r || document).querySelector(s), app = $('#app');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let token = sessionStorage.getItem('tk') || '';
+let me = null; try { me = JSON.parse(localStorage.getItem('me') || 'null'); } catch (e) {}
+function setMe(x) { me = x; x ? localStorage.setItem('me', JSON.stringify(x)) : localStorage.removeItem('me'); pill(); }
 
 async function api(a, d = {}) {
   if (API.includes('你的部署ID')) throw new Error('尚未設定 API 網址，請把 Apps Script 部署網址填入網頁最上方的 API');
@@ -131,14 +134,17 @@ async function api(a, d = {}) {
   if (j.error) throw new Error(j.error);
   return j;
 }
-const adm = (a, d = {}) => api(a, { ...d, token });
+const adm = async (a, d = {}) => { try { return await api(a, { ...d, token }); } catch (e) { if (/登入無效|不是管理員/.test(e.message)) logout(); throw e; } };
+const memApi = (a, d = {}) => api(a, { ...d, u: { code: me.code, pin: me.pin } });
 function toast(m, bad) { const t = $('#toast'); t.textContent = m; t.className = 'show' + (bad ? ' bad' : ''); clearTimeout(toast.t); toast.t = setTimeout(() => t.className = '', 2800); }
 function logout() { token = ''; sessionStorage.removeItem('tk'); }
-async function run(fn) { try { await fn(); } catch (e) { toast(e.message, true); if (/登入|管理員/.test(e.message)) logout(); } }
+async function run(fn) { try { await fn(); } catch (e) { toast(e.message, true); } }
 function pill() {
-  $('#pill').className = 'admin-pill' + (token ? ' is-admin' : '');
-  $('#pillText').textContent = token ? '👑 團主模式' : '🔒 訪客模式';
-  $('#pillLink').textContent = token ? '團主後台' : '團主登入';
+  const p = $('#pill');
+  p.className = 'admin-pill' + (me ? ' is-admin' : '');
+  p.innerHTML = me ? `<span>🌼 ${esc(me.name)}（${me.code.slice(-4)}）</span><a href="#" id="lo">登出</a>` : '<span>🙋 尚未登入</span><a href="#me">登入 / 註冊</a>';
+  if (me) $('#lo').onclick = ev => { ev.preventDefault(); setMe(null); route(); };
+  $('#adminLink').textContent = token ? '👑 團主後台' : '團主登入';
 }
 
 const fm = s => s ? s.slice(5, 10).replace('-', '/') + ' ' + s.slice(11) : '';
@@ -176,39 +182,79 @@ function coordsHtml(t) {
     `<button class="wide" data-copy="${encodeURIComponent(L.join('\n'))}">📋 一鍵複製全部座標</button></div>`;
 }
 
+function authBox(ev, done) {
+  let mode = 'up';
+  const box = document.createElement('div');
+  const draw = () => {
+    const up = mode === 'up', canClaim = up && ev && ev.open && ev.remaining > 0;
+    box.innerHTML = `<h3>${up ? '🌱 註冊並登記' : '🔑 登入'}</h3>
+    <p class="muted">${up ? '第一次使用請註冊，之後只要用「好友碼 + 安全碼」登入。' : '請輸入註冊時填的好友碼與安全碼。'}</p>
+    ${up ? '<label>遊戲暱稱<input id="a-n" maxlength="20" autocomplete="off"></label>' : ''}
+    <label>好友碼（12 碼）<input id="a-c" inputmode="numeric" maxlength="14" placeholder="1234 5678 9012" autocomplete="off"></label>
+    <label>安全碼（4 碼數字${up ? '，自己設定，請記住' : ''}）<input id="a-p" type="password" inputmode="numeric" maxlength="4" autocomplete="off"></label>
+    ${canClaim ? `<label>認領顆數<select id="a-k">${opts(Math.min(ev.limit, ev.remaining), 1)}</select></label>` : ''}
+    <div class="row"><button id="a-go">${up ? (canClaim ? '註冊並登記認領' : '註冊') : '登入'}</button><button class="ghost" id="a-sw">${up ? '我已經註冊過，直接登入' : '第一次來？我要註冊'}</button></div>`;
+    $('#a-sw', box).onclick = () => { mode = up ? 'in' : 'up'; draw(); };
+    $('#a-go', box).onclick = () => run(async () => {
+      const code = $('#a-c', box).value.replace(/\D/g, ''), pin = $('#a-p', box).value;
+      if (up) {
+        const r = await api('signup', { name: $('#a-n', box).value, code, pin });
+        setMe({ code, pin, name: r.name });
+        if ($('#a-k', box)) {
+          try { await memApi('register', { id: ev.id, count: $('#a-k', box).value }); toast('註冊並登記成功 🌸'); }
+          catch (x) { toast('註冊成功，但登記失敗：' + x.message, true); }
+        } else toast('註冊成功 🌸');
+      } else { const r = await api('login', { code, pin }); setMe({ code, pin, name: r.name }); toast('登入成功 🌼'); }
+      done();
+    });
+  };
+  draw();
+  return box;
+}
+
+function mePage() {
+  app.className = 'narrow';
+  if (me) {
+    app.innerHTML = `<div class="panel" style="padding:16px 18px"><h2>🌼 已登入</h2><p>${esc(me.name)}（好友碼末 4 碼 ${me.code.slice(-4)}）</p><div class="row"><button class="ghost" id="lo2">登出</button><a class="back" href="#" style="margin:0">‹ 回開團列表</a></div></div>`;
+    $('#lo2').onclick = () => { setMe(null); route(); };
+    return;
+  }
+  app.innerHTML = '<section id="auth"></section>';
+  $('#auth').appendChild(authBox(null, () => { if (location.hash) location.hash = ''; else route(); }));
+}
+
 async function detail(id) {
   app.className = 'narrow'; app.innerHTML = '<p class="muted">載入中…</p>';
   const d = await api('get', { id }), e = d.event, canReg = e.open && e.remaining > 0;
+  let mine = null;
+  if (me) {
+    try { mine = await memApi('mine', { id }); }
+    catch (x) { if (/好友碼或安全碼/.test(x.message)) { setMe(null); toast('登入已失效，請重新登入', true); } else throw x; }
+  }
+  const r = mine && mine.reg;
+  let mid = '';
+  if (!me) mid = '<section id="auth"></section>';
+  else if (r) mid = `<section><h3>🌼 我的登記</h3><p><b>${esc(me.name)}</b> 認領 <b>${r.c}</b> 朵</p>
+    ${r.coords != null ? coordsHtml(r.coords) : `<p class="muted">座標尚未開放，預計 ${fm(e.ca)} 開放查詢。</p>`}
+    ${e.open ? `<div class="row"><select id="nc">${opts(Math.min(e.limit, e.remaining + r.c), r.c)}</select><button id="sv">儲存顆數</button><button class="danger" id="cx">取消登記</button></div>` : '<p class="muted">登記已截止，無法再修改。</p>'}</section>`;
+  else if (canReg) mid = `<section><h3>🌱 認領種植數量</h3><p class="muted">登入身分：${esc(me.name)}</p>
+    <label>認領顆數<select id="ct">${opts(Math.min(e.limit, e.remaining), 1)}</select></label><div class="row"><button id="go">登記認領</button></div></section>`;
+  else mid = `<section><p class="muted">目前不開放登記（${e.status}）。</p></section>`;
+
   app.innerHTML = `<a class="back" href="#">‹ 全部開團</a>
   <div class="panel" style="padding:16px 18px"><h2>${esc(e.name)} ${chip(e)}</h2>
   <dl class="facts"><dt>🌼 花種</dt><dd>${esc(e.flower)}</dd><dt>🌸 開花時間</dt><dd>${win(e)}</dd><dt>📍 座標開放</dt><dd>${fm(e.ca)}</dd>
   <dt>⏰ 停止登記</dt><dd>${fm(e.ce)}</dd><dt>🎫 每人上限</dt><dd>${e.limit} 朵</dd><dt>🚩 流標條件</dt><dd>認領總數未達 ${e.min} 朵</dd></dl>
   ${meter(e)}${stats(e)}${e.note ? `<div class="notice" style="margin-top:12px">${esc(e.note).replace(/\n/g, '<br>')}</div>` : ''}</div>
-  ${canReg ? `<section><h3>🌱 認領種植數量</h3>
-    <label>遊戲暱稱<input id="nm" maxlength="20" autocomplete="off"></label>
-    <label>好友碼（12 碼）<input id="fc" inputmode="numeric" maxlength="14" placeholder="1234 5678 9012" autocomplete="off"></label>
-    <label>認領顆數<select id="ct">${opts(Math.min(e.limit, e.remaining), 1)}</select></label>
-    <div class="row"><button id="go">登記認領</button></div></section>` : ''}
-  <section><h3>🔎 查詢我的登記</h3>
-    <label>好友碼末 4 碼（要修改或取消，請輸入完整 12 碼）<input id="q" inputmode="numeric" maxlength="14" autocomplete="off"></label>
-    <div class="row"><button id="lk">查詢</button></div><div id="mine"></div></section>
+  ${mid}
   <section><h3>🌷 參與名單</h3>${d.people.length ? '<div class="people">' + d.people.map(p => `<span>${esc(p.n)} ×${p.c}</span>`).join('') + '</div>' : '<p class="muted">還沒有人登記。</p>'}</section>`;
 
-  if (canReg) $('#go').onclick = () => run(async () => {
-    await api('register', { id, name: $('#nm').value, code: $('#fc').value, count: $('#ct').value });
-    toast('登記成功 🌸'); detail(id);
-  });
-  $('#lk').onclick = () => run(async () => {
-    const code = $('#q').value, m = await api('mine', { id, code });
-    $('#mine').innerHTML = m.list.length ? m.list.map(r => `<div class="mine"><b>${esc(r.n)}</b> 認領 ${r.c} 朵
-      ${r.coords != null ? coordsHtml(r.coords) : (e.coordsOpen ? '' : `<p class="muted">座標尚未開放，預計 ${fm(e.ca)} 開放查詢。</p>`)}
-      ${m.full && e.open ? `<div class="row"><select id="nc">${opts(Math.min(e.limit, e.remaining + r.c), r.c)}</select><button id="sv">儲存顆數</button><button class="danger" id="cx">取消登記</button></div>` : ''}</div>`).join('')
-      : '<p class="muted">找不到登記，請確認好友碼。</p>';
-    if ($('#sv')) {
-      $('#sv').onclick = () => run(async () => { await api('update', { id, code, count: $('#nc').value }); toast('已更新顆數'); detail(id); });
-      $('#cx').onclick = () => run(async () => { if (!confirm('確定取消這筆登記？')) return; await api('update', { id, code, cancel: 1 }); toast('已取消登記'); detail(id); });
-    }
-  });
+  if (!me) $('#auth').appendChild(authBox(e, () => detail(id)));
+  if ($('#go')) $('#go').onclick = () => run(async () => { await memApi('register', { id, count: $('#ct').value }); toast('登記成功 🌸'); detail(id); });
+  if ($('#sv')) {
+    $('#sv').onclick = () => run(async () => { await memApi('update', { id, count: $('#nc').value }); toast('已更新顆數'); detail(id); });
+    $('#cx').onclick = () => run(async () => { if (!confirm('確定取消這筆登記？')) return; await memApi('update', { id, cancel: 1 }); toast('已取消登記'); detail(id); });
+  }
 }
 
 // ====== 團主頁面 ======
@@ -226,7 +272,7 @@ async function adminPage() {
   try { await adm('check'); } catch (e) { logout(); toast(e.message, true); return adminPage(); }
   pill();
   const d = await api('list');
-  app.innerHTML = `<h2>👑 團主後台</h2><div class="notice" style="margin-bottom:10px">新增開團只要設定「開花時間」，其他時間會自動算好：<br>① 開放登記：按下儲存就立刻開放，之後可隨時修改顆數<br>② 座標開放：開花前 5 分鐘<br>③ 停止登記：開花結束（開花後 10 分鐘）<br>團主也可以登記：點開團旁的「前往登記頁」，就能像一般參與者一樣登記。</div><div class="row" style="margin:0 0 6px"><button class="ghost" id="out">登出</button></div>
+  app.innerHTML = `<h2>👑 團主後台</h2><div class="notice" style="margin-bottom:10px">新增開團只要設定「開花時間」，其他時間會自動算好：<br>① 開放登記：按下儲存就立刻開放，之後可隨時修改顆數<br>② 座標開放：開花前 5 分鐘<br>③ 停止登記：開花結束（開花後 10 分鐘）<br>座標：把所有座標貼在試算表「座標」分頁，再到「名單與座標」按「分配座標」。<br>團主也可以登記：點開團旁的「前往登記頁」，用好友碼＋安全碼登入就能像一般參與者一樣登記。</div><div class="row" style="margin:0 0 6px"><button class="ghost" id="out">登出</button></div>
   <section><h3>📣 首頁公告</h3><textarea id="nt">${esc(d.notice)}</textarea><div class="row"><button id="nts">儲存公告</button></div></section>
   <section><h3>🌸 開團</h3><div class="row" style="margin-top:0"><button id="new">＋ 新增開團</button></div><div id="form"></div>
   ${d.events.map(e => `<div class="rg"><b>${esc(e.name)}</b> ${chip(e)}<div class="muted">🌸 開花 ${win(e)}<br>📍 座標 ${fm(e.ca)} 開放　⏰ 停止登記 ${fm(e.ce)}<br>已領 ${e.claimed} / ${e.total} 朵（${e.people} 人），${e.min} 朵以下流標</div>
@@ -277,20 +323,28 @@ function form(e) {
 }
 
 async function regs(e) {
-  const box = $('#r-' + e.id), d = await adm('regs', { id: e.id });
-  box.innerHTML = d.list.length ? d.list.map(r => `<div class="rg"><b>${esc(r.n)}</b> ×${r.c} <small>${esc(r.code)}</small>
+  const box = $('#r-' + e.id), d = await adm('regs', { id: e.id }), need = d.list.reduce((a, r) => a + r.c, 0);
+  box.innerHTML = `<div class="notice" style="margin-top:10px">座標庫（試算表「座標」分頁，A 欄填「${esc(e.name)}」，B 欄一行一個座標）：${d.pool} 個；目前需要 ${need} 朵。<br>座標會依登記順序，由上往下分給每位認領者。</div>
+  <div class="row"><button data-as="0">分配座標（只補上還沒有的）</button><button class="ghost" data-as="1">全部重新分配</button></div>` +
+  (d.list.length ? d.list.map(r => `<div class="rg"><b>${esc(r.n)}</b> ×${r.c} <small>${esc(r.code)}</small>
     <textarea data-id="${r.id}" placeholder="座標，一行一個">${esc(r.coords)}</textarea>
-    <div class="row"><button class="ghost" data-x="${r.id}">取消這筆登記</button></div></div>`).join('') + '<button class="wide" id="sc">儲存全部座標</button>' : '<p class="muted">還沒有人登記。</p>';
+    <div class="row"><button class="ghost" data-x="${r.id}">取消這筆登記</button><button class="ghost" data-pin="${esc(r.code)}">重設安全碼</button></div></div>`).join('') + '<button class="wide" id="sc">儲存全部座標</button>' : '<p class="muted">還沒有人登記。</p>');
+  box.querySelectorAll('[data-as]').forEach(b => b.onclick = () => run(async () => {
+    if (b.dataset.as === '1' && !confirm('會重新分配所有人的座標，確定嗎？')) return;
+    const r = await adm('assign', { id: e.id, all: b.dataset.as === '1' });
+    toast(r.short ? `已分配，但座標不足 ${r.short} 朵，請補充座標庫` : '座標已分配完成 ✅', !!r.short); regs(e);
+  }));
   if (!d.list.length) return;
-  $('#sc').onclick = () => run(async () => { await adm('setCoords', { items: [...box.querySelectorAll('textarea')].map(t => ({ id: t.dataset.id, coords: t.value })) }); toast('座標已儲存 ✅'); });
+  $('#sc', box).onclick = () => run(async () => { await adm('setCoords', { items: [...box.querySelectorAll('textarea')].map(t => ({ id: t.dataset.id, coords: t.value })) }); toast('座標已儲存 ✅'); });
   box.querySelectorAll('[data-x]').forEach(b => b.onclick = () => run(async () => { if (confirm('取消這筆登記？')) { await adm('adminCancel', { rid: b.dataset.x }); regs(e); } }));
+  box.querySelectorAll('[data-pin]').forEach(b => b.onclick = () => run(async () => { if (confirm('重設後，對方要用同一個好友碼重新註冊並設定新的安全碼，確定嗎？')) { await adm('resetPin', { code: b.dataset.pin }); toast('已重設，請通知對方重新註冊'); } }));
 }
 
 // ====== 路由 ======
 function route() {
   const h = location.hash.slice(1);
   app.onclick = null; pill();
-  run(async () => { if (h === 'admin') await adminPage(); else if (h.startsWith('e/')) await detail(h.slice(2)); else await home(); });
+  run(async () => { if (h === 'admin') await adminPage(); else if (h === 'me') mePage(); else if (h.startsWith('e/')) await detail(h.slice(2)); else await home(); });
   window.scrollTo(0, 0);
 }
 addEventListener('hashchange', route);
