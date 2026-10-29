@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌸 沐沐強開登記</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌸</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FFF6E8; --cream-deep:#FBE9CC; --leaf:#3E9166; --leaf-deep:#276148; --ink:#2B4636;
+    --pink:#FF7FA8; --pink-deep:#E85D8D; --yellow:#FFC93C; --sky:#5FC1DE; --purple:#B080E0;
+    --red:#FF6161; --red-deep:#D94A4A; --white:#FFFFFF; --card-shadow:0 6px 0 rgba(39,97,72,0.14);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0; font-family:"Zen Maru Gothic","Noto Sans TC",sans-serif;
+    background:
+      radial-gradient(circle at 10% 15%, rgba(255,201,60,0.18), transparent 40%),
+      radial-gradient(circle at 90% 10%, rgba(255,127,168,0.16), transparent 45%),
+      radial-gradient(circle at 50% 90%, rgba(95,193,222,0.15), transparent 40%),
+      var(--cream);
+    color:var(--ink); min-height:100vh; overflow-x:hidden;
+  }
+  .drift{position:fixed; pointer-events:none; z-index:0; opacity:.55; animation:drift 9s ease-in-out infinite; font-size:clamp(22px,3vw,34px);}
+  .drift.d1{top:10%; left:4%;} .drift.d2{top:65%; left:2%; animation-delay:1.5s;}
+  .drift.d3{top:20%; right:5%; animation-delay:.7s;} .drift.d4{top:75%; right:6%; animation-delay:2.2s;}
+  @keyframes drift{0%,100%{transform:translateY(0) rotate(-4deg);}50%{transform:translateY(-22px) rotate(6deg);}}
+  @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important;}}
+
+  .wrap{position:relative; z-index:1; max-width:1080px; margin:0 auto; padding:28px 20px 80px;}
+  .narrow{max-width:680px; margin:0 auto;}
+  .bloom-strip{display:flex; justify-content:center; gap:10px; margin-bottom:6px; flex-wrap:wrap;}
+  .bloom-strip span{display:inline-block; font-size:clamp(18px,2.4vw,26px); transform:scale(0); animation:bloom-pop .6s cubic-bezier(.34,1.56,.64,1) forwards;}
+  .bloom-strip span:nth-child(2){animation-delay:.1s;} .bloom-strip span:nth-child(3){animation-delay:.2s;}
+  .bloom-strip span:nth-child(4){animation-delay:.3s;} .bloom-strip span:nth-child(5){animation-delay:.4s;}
+  .bloom-strip span:nth-child(6){animation-delay:.5s;} .bloom-strip span:nth-child(7){animation-delay:.6s;}
+  @keyframes bloom-pop{0%{transform:scale(0) rotate(-30deg);opacity:0;}70%{transform:scale(1.25) rotate(8deg);opacity:1;}100%{transform:scale(1) rotate(0);opacity:1;}}
+
+  header{text-align:center; margin-bottom:26px;}
+  h1{font-family:"Baloo 2","Zen Maru Gothic",sans-serif; font-weight:800; font-size:clamp(26px,5vw,42px); margin:4px 0 8px; color:var(--leaf-deep); letter-spacing:1px; text-shadow:3px 3px 0 var(--white);}
+  h1 a{color:inherit; text-decoration:none;}
+  header p.sub{font-size:clamp(13px,1.8vw,16px); color:#5C7B6A; margin:0; font-weight:500;}
+  .admin-pill{display:flex; width:fit-content; margin:14px auto 0; align-items:center; gap:8px; background:var(--white); border:2px dashed var(--purple); color:#6B4A9A; padding:6px 14px; border-radius:999px; font-size:13px; font-weight:700; flex-wrap:wrap; justify-content:center;}
+  .admin-pill.is-admin{border-color:var(--leaf); color:var(--leaf-deep); background:#EAF6EE;}
+  .admin-pill a{background:var(--purple); color:#fff; font-size:12px; padding:4px 12px; border-radius:999px; text-decoration:none;}
+  #googleSignInBtn{line-height:0;}
+
+  h2,.section-title{font-family:"Baloo 2","Zen Maru Gothic",sans-serif; font-weight:700; font-size:22px; color:var(--leaf-deep); margin:6px 0 10px;}
+  h3{font-family:"Baloo 2","Zen Maru Gothic",sans-serif; font-weight:700; font-size:18px; color:var(--leaf-deep); margin:18px 0 8px;}
+  .muted{color:#7C9686; font-size:14px;}
+  .notice{grid-column:1/-1; background:#FFF0D6; border:2px dashed #E0B060; color:#8A5A00; border-radius:16px; padding:10px 16px; font-weight:700; font-size:14px; line-height:1.7;}
+
+  .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:16px;}
+  .card,section,.panel{background:var(--white); border-radius:20px; box-shadow:var(--card-shadow); border:3px solid rgba(39,97,72,.06);}
+  .card{display:block; padding:14px 18px 16px; color:inherit; text-decoration:none; opacity:0; transform:translateY(14px) scale(.97); animation:card-in .5s ease forwards; transition:transform .2s ease, box-shadow .2s ease;}
+  @keyframes card-in{to{opacity:1; transform:translateY(0) scale(1);}}
+  .card:hover{transform:translateY(-3px); box-shadow:0 9px 0 rgba(39,97,72,.14);}
+  .card h3{margin:0 0 6px;}
+  section{padding:6px 18px 18px; margin-top:18px;}
+  .chip{display:inline-block; font-family:"Zen Maru Gothic",sans-serif; font-size:12px; font-weight:800; padding:2px 10px; border-radius:999px; background:#EFEBE0; color:#7C6F55; vertical-align:middle;}
+  .chip.on{background:var(--leaf); color:#fff;} .chip.full{background:var(--yellow); color:#7A5A00;}
+  .chip.void{background:#FDEBEC; color:var(--red-deep);} .chip.soon{background:#DDF1F8; color:#25688A;}
+
+  .dots{display:flex; flex-wrap:wrap; gap:4px; margin:10px 0 4px;}
+  .dots i{width:14px; height:14px; border-radius:50%; border:2px solid #E3D9C4; background:var(--white);}
+  .dots i.f{background:var(--pink); border-color:var(--pink-deep);}
+  .bar{height:14px; background:#EFEBE0; border-radius:99px; overflow:hidden; margin:10px 0 4px;} .bar b{display:block; height:100%; background:var(--pink);}
+  .count{margin:2px 0 0; font-size:14px; font-weight:700; color:#5C7B6A;}
+  .count b{font-family:"Baloo 2",sans-serif; font-size:18px; color:var(--pink-deep);}
+  dl.facts{display:grid; grid-template-columns:auto 1fr; gap:3px 14px; margin:12px 0; font-size:15px;}
+  dl.facts dt{color:#7C9686; font-weight:700;} dl.facts dd{margin:0; font-weight:700;}
+
+  label{display:block; margin:12px 0; font-size:14px; font-weight:700; color:#5C7B6A;}
+  input,select,textarea{display:block; width:100%; font-family:inherit; font-size:15px; font-weight:600; padding:10px 14px; border:2px solid #E3D9C4; border-radius:14px; background:var(--white); color:var(--ink); margin-top:4px; outline:none;}
+  input:focus,select:focus,textarea:focus{border-color:var(--leaf);}
+  textarea{min-height:76px; resize:vertical;}
+  input[type=checkbox]{display:inline-block; width:auto; margin:0 8px 0 0; accent-color:var(--leaf);}
+  button{border:none; cursor:pointer; font-family:inherit; font-weight:700; font-size:14px; padding:9px 20px; border-radius:999px; background:var(--leaf); color:#fff; box-shadow:0 3px 0 var(--leaf-deep); transition:transform .15s ease;}
+  button:hover{transform:translateY(-2px);} button:active{transform:translateY(1px) scale(.97);} button:disabled{opacity:.5;}
+  button.ghost{background:#EFEBE0; color:#7C6F55; box-shadow:0 3px 0 #D9CFB8;}
+  button.danger{background:var(--red); box-shadow:0 3px 0 var(--red-deep);}
+  button.wide{width:100%; margin-top:10px;}
+  :focus-visible{outline:3px solid var(--yellow); outline-offset:2px;}
+  .row{display:flex; gap:10px; align-items:center; margin-top:12px; flex-wrap:wrap;} .row select{width:auto;}
+  .back{display:inline-block; margin-bottom:10px; color:#5C7B6A; font-weight:700; text-decoration:none;}
+
+  .mine{border-top:2px dashed #E3D9C4; padding-top:12px; margin-top:14px;}
+  .cl{display:flex; justify-content:space-between; align-items:center; gap:8px; padding:7px 0; border-bottom:1px solid #F1EADB;}
+  .cl code{font-family:"Baloo 2",monospace; font-weight:700; font-size:15px; word-break:break-all;}
+  .cl button{padding:4px 14px; font-size:13px;}
+  .people{display:flex; flex-wrap:wrap; gap:8px;} .people span{background:#FFE6EE; color:#B03A66; border-radius:999px; padding:3px 12px; font-size:13px; font-weight:700;}
+  .rg{border-top:2px dashed #E3D9C4; padding:12px 0;} .rg small{color:#9AA88E; font-family:"Baloo 2",monospace;}
+  footer.credit{text-align:center; margin-top:46px; font-size:12px; color:#9AA88E; line-height:1.7;}
+  #toast{position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:var(--leaf-deep); color:#fff; font-weight:700; padding:10px 20px; border-radius:999px; opacity:0; pointer-events:none; transition:opacity .2s; max-width:90vw; z-index:300;}
+  #toast.show{opacity:1;} #toast.bad{background:var(--red-deep);}
+</style>
+</head>
+<body>
+<span class="drift d1">🍃</span><span class="drift d2">🌱</span><span class="drift d3">🍃</span><span class="drift d4">🌱</span>
+<div class="wrap">
+  <div class="bloom-strip" aria-hidden="true"><span>🌸</span><span>🌼</span><span>🌷</span><span>🌺</span><span>🌻</span><span>🌹</span><span>💮</span></div>
+  <header>
+    <h1><a href="#">沐沐強開登記</a></h1>
+    <p class="sub">皮克敏強開團認領登記 🌱</p>
+    <div class="admin-pill" id="pill"><span id="pillText">🔒 訪客模式</span><a href="#admin" id="pillLink">團主登入</a></div>
+  </header>
+  <div id="app"></div>
+  <footer class="credit">🌷 本頁面為強開團認領登記，由沐沐維護 🌷</footer>
+</div>
+<div id="toast" role="status"></div>
+<script>
+// ====== 設定 ======
+const API = 'https://script.google.com/macros/s/你的部署ID/exec'; // Apps Script 網頁應用程式網址
+const CLIENT_ID = '1001037373208-3sdt3t6aekf1v0efidd53ob62m92t2nl.apps.googleusercontent.com'; // 與庫存網站相同，必須和 Code.gs 的 CLIENT_ID 一致
+
+const $ = s => document.querySelector(s), app = $('#app');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let token = sessionStorage.getItem('tk') || '';
+
+async function api(a, d = {}) {
+  const r = await fetch(API, { method: 'POST', body: JSON.stringify({ a, ...d }) });
+  const j = await r.json();
+  if (j.error) throw new Error(j.error);
+  return j;
+}
+const adm = (a, d = {}) => api(a, { ...d, token });
+function toast(m, bad) { const t = $('#toast'); t.textContent = m; t.className = 'show' + (bad ? ' bad' : ''); clearTimeout(toast.t); toast.t = setTimeout(() => t.className = '', 2800); }
+function logout() { token = ''; sessionStorage.removeItem('tk'); }
+async function run(fn) { try { await fn(); } catch (e) { toast(e.message, true); if (/登入|管理員/.test(e.message)) logout(); } }
+function pill() {
+  $('#pill').className = 'admin-pill' + (token ? ' is-admin' : '');
+  $('#pillText').textContent = token ? '👑 團主模式' : '🔒 訪客模式';
+  $('#pillLink').textContent = token ? '團主後台' : '團主登入';
+}
+
+const fm = s => s ? s.slice(5, 10).replace('-', '/') + ' ' + s.slice(11) : '';
+const win = e => fm(e.bs) + '–' + (e.be.slice(0, 10) === e.bs.slice(0, 10) ? e.be.slice(11) : fm(e.be));
+const CH = { '領取中': 'on', '已額滿': 'full', '流標': 'void', '尚未開始': 'soon' };
+const chip = e => `<span class="chip ${CH[e.status] || ''}">${e.status}</span>`;
+const opts = (n, sel) => Array.from({ length: n }, (_, i) => `<option ${i + 1 === sel ? 'selected' : ''}>${i + 1}</option>`).join('');
+
+function meter(e) {
+  if (e.total <= 60) return '<div class="dots" aria-hidden="true">' + Array.from({ length: e.total }, (_, i) => `<i class="${i < e.claimed ? 'f' : ''}"></i>`).join('') + '</div>';
+  return `<div class="bar"><b style="width:${Math.min(100, e.claimed / e.total * 100)}%"></b></div>`;
+}
+const stats = e => `<p class="count">已領 <b>${e.claimed}</b> / ${e.total}，剩餘 <b>${e.remaining}</b>（${e.people} 人）</p>`;
+
+function copy(t) {
+  const ok = () => toast('已複製 ✅');
+  const fb = () => { const x = document.createElement('textarea'); x.value = t; document.body.appendChild(x); x.select(); document.execCommand('copy'); x.remove(); ok(); };
+  if (navigator.clipboard) navigator.clipboard.writeText(t).then(ok, fb); else fb();
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-copy]'); if (b) copy(decodeURIComponent(b.dataset.copy)); });
+
+// ====== 參與者頁面 ======
+async function home() {
+  app.className = 'grid'; app.innerHTML = '<p class="muted">載入中…</p>';
+  const d = await api('list');
+  app.innerHTML = (d.notice ? `<div class="notice">${esc(d.notice).replace(/\n/g, '<br>')}</div>` : '') +
+    (d.events.length ? d.events.map(e => `<a class="card" href="#e/${e.id}"><h3>${esc(e.name)} ${chip(e)}</h3>
+      <div class="muted">🌸 開花 ${win(e)}<br>⏰ 停止領取 ${fm(e.ce)}</div>${meter(e)}${stats(e)}</a>`).join('') : '<p class="muted">目前沒有開團，請等團主公告 🌱</p>');
+}
+
+function coordsHtml(t) {
+  const L = String(t).split('\n').map(x => x.trim()).filter(Boolean);
+  if (!L.length) return '<p class="muted">團主還沒分配座標，請稍後再查詢。</p>';
+  return '<div>' + L.map(l => `<div class="cl"><code>${esc(l)}</code><button data-copy="${encodeURIComponent(l)}">複製</button></div>`).join('') +
+    `<button class="wide" data-copy="${encodeURIComponent(L.join('\n'))}">📋 一鍵複製全部座標</button></div>`;
+}
+
+async function detail(id) {
+  app.className = 'narrow'; app.innerHTML = '<p class="muted">載入中…</p>';
+  const d = await api('get', { id }), e = d.event, canReg = e.open && e.remaining > 0;
+  app.innerHTML = `<a class="back" href="#">‹ 全部開團</a>
+  <div class="panel" style="padding:16px 18px"><h2>${esc(e.name)} ${chip(e)}</h2>
+  <dl class="facts"><dt>🌼 花種</dt><dd>${esc(e.flower)}</dd><dt>🌸 開花時間</dt><dd>${win(e)}</dd><dt>▶️ 開始領取</dt><dd>${fm(e.cs)}</dd>
+  <dt>⏰ 停止領取</dt><dd>${fm(e.ce)}</dd><dt>🎫 每人上限</dt><dd>${e.limit} 朵</dd><dt>👥 最低人數</dt><dd>${e.min} 人，未達流標</dd></dl>
+  ${meter(e)}${stats(e)}${e.note ? `<div class="notice" style="margin-top:12px">${esc(e.note).replace(/\n/g, '<br>')}</div>` : ''}</div>
+  ${canReg ? `<section><h3>🌱 認領種植數量</h3>
+    <label>遊戲暱稱<input id="nm" maxlength="20" autocomplete="off"></label>
+    <label>好友碼（12 碼）<input id="fc" inputmode="numeric" maxlength="14" placeholder="1234 5678 9012" autocomplete="off"></label>
+    <label>認領顆數<select id="ct">${opts(Math.min(e.limit, e.remaining), 1)}</select></label>
+    <div class="row"><button id="go">登記認領</button></div></section>` : ''}
+  <section><h3>🔎 查詢我的登記</h3>
+    <label>好友碼末 4 碼（要修改或取消，請輸入完整 12 碼）<input id="q" inputmode="numeric" maxlength="14" autocomplete="off"></label>
+    <div class="row"><button id="lk">查詢</button></div><div id="mine"></div></section>
+  <section><h3>🌷 參與名單</h3>${d.people.length ? '<div class="people">' + d.people.map(p => `<span>${esc(p.n)} ×${p.c}</span>`).join('') + '</div>' : '<p class="muted">還沒有人登記。</p>'}</section>`;
+
+  if (canReg) $('#go').onclick = () => run(async () => {
+    await api('register', { id, name: $('#nm').value, code: $('#fc').value, count: $('#ct').value });
+    toast('登記成功 🌸'); detail(id);
+  });
+  $('#lk').onclick = () => run(async () => {
+    const code = $('#q').value, m = await api('mine', { id, code });
+    $('#mine').innerHTML = m.list.length ? m.list.map(r => `<div class="mine"><b>${esc(r.n)}</b> 認領 ${r.c} 朵
+      ${r.coords != null ? coordsHtml(r.coords) : (e.coordsOpen ? '' : '<p class="muted">座標尚未開放查詢。</p>')}
+      ${m.full && e.open ? `<div class="row"><select id="nc">${opts(Math.min(e.limit, e.remaining + r.c), r.c)}</select><button id="sv">儲存顆數</button><button class="danger" id="cx">取消登記</button></div>` : ''}</div>`).join('')
+      : '<p class="muted">找不到登記，請確認好友碼。</p>';
+    if ($('#sv')) {
+      $('#sv').onclick = () => run(async () => { await api('update', { id, code, count: $('#nc').value }); toast('已更新顆數'); detail(id); });
+      $('#cx').onclick = () => run(async () => { if (!confirm('確定取消這筆登記？')) return; await api('update', { id, code, cancel: 1 }); toast('已取消登記'); detail(id); });
+    }
+  });
+}
+
+// ====== 團主頁面 ======
+function loadG() {
+  const go = () => { google.accounts.id.initialize({ client_id: CLIENT_ID, callback: r => { token = r.credential; sessionStorage.setItem('tk', token); route(); } });
+    google.accounts.id.renderButton($('#gb'), { theme: 'outline', size: 'large' }); };
+  if (window.google && google.accounts) return go();
+  const s = document.createElement('script'); s.src = 'https://accounts.google.com/gsi/client'; s.onload = go; document.head.appendChild(s);
+}
+const toL = s => (s || '').replace(' ', 'T'), fromL = s => (s || '').replace('T', ' ');
+
+async function adminPage() {
+  app.className = 'narrow';
+  if (!token) { pill(); app.innerHTML = '<div class="panel" style="padding:16px 18px;text-align:center"><h2>團主登入</h2><p class="muted">請用管理員的 Google 帳號登入。</p><div id="gb" style="display:inline-block"></div></div>'; return loadG(); }
+  try { await adm('check'); } catch (e) { logout(); toast(e.message, true); return adminPage(); }
+  pill();
+  const d = await api('list');
+  app.innerHTML = `<h2>👑 團主後台</h2><div class="row" style="margin:0 0 6px"><button class="ghost" id="out">登出</button></div>
+  <section><h3>📣 首頁公告</h3><textarea id="nt">${esc(d.notice)}</textarea><div class="row"><button id="nts">儲存公告</button></div></section>
+  <section><h3>🌸 開團</h3><div class="row" style="margin-top:0"><button id="new">＋ 新增開團</button></div><div id="form"></div>
+  ${d.events.map(e => `<div class="rg"><b>${esc(e.name)}</b> ${chip(e)}<div class="muted">${win(e)}　${e.claimed}/${e.total}（${e.people} 人）　座標${e.coordsOpen ? '已開放' : '未開放'}</div>
+    <div class="row"><button class="ghost" data-a="regs" data-id="${e.id}">名單與座標</button><button class="ghost" data-a="edit" data-id="${e.id}">編輯</button>
+    <button class="ghost" data-a="tog" data-id="${e.id}">${e.coordsOpen ? '關閉座標查詢' : '開放座標查詢'}</button><button class="danger" data-a="del" data-id="${e.id}">刪除</button></div>
+    <div id="r-${e.id}"></div></div>`).join('')}</section>`;
+  const byId = Object.fromEntries(d.events.map(e => [e.id, e]));
+  $('#out').onclick = () => { logout(); route(); };
+  $('#nts').onclick = () => run(async () => { await adm('setNotice', { text: $('#nt').value }); toast('公告已儲存'); });
+  $('#new').onclick = () => form({ limit: 5, total: 25, min: 10, name: '', flower: '', bs: '', be: '', cs: '', ce: '', note: '' });
+  app.onclick = ev => { const b = ev.target.closest('[data-a]'); if (!b) return; const e = byId[b.dataset.id];
+    run(async () => {
+      if (b.dataset.a === 'edit') form(e);
+      else if (b.dataset.a === 'tog') { await adm('save', { e: { ...e, coordsOpen: !e.coordsOpen } }); toast(e.coordsOpen ? '已關閉座標查詢' : '已開放座標查詢'); adminPage(); }
+      else if (b.dataset.a === 'del') { if (confirm('刪除「' + e.name + '」？')) { await adm('del', { id: e.id }); adminPage(); } }
+      else if (b.dataset.a === 'regs') regs(e);
+    }); };
+}
+
+function form(e) {
+  const v = (k, t = 'text') => `<input id="f-${k}" type="${t}" value="${esc(t === 'datetime-local' ? toL(e[k]) : e[k])}">`;
+  $('#form').innerHTML = `<div class="rg"><label>活動名稱${v('name')}</label><label>花種${v('flower')}</label>
+  <label>開花開始${v('bs', 'datetime-local')}</label><label>開花結束${v('be', 'datetime-local')}</label>
+  <label>開始領取${v('cs', 'datetime-local')}</label><label>停止領取（登記截止）${v('ce', 'datetime-local')}</label>
+  <label>每人上限（朵）${v('limit', 'number')}</label><label>總數（朵）${v('total', 'number')}</label><label>最低人數（未達流標）${v('min', 'number')}</label>
+  <label>備註<textarea id="f-note">${esc(e.note)}</textarea></label>
+  <label><input type="checkbox" id="f-co" ${e.coordsOpen ? 'checked' : ''}>開放參與者用末 4 碼查詢座標</label>
+  <div class="row"><button id="fs">儲存</button></div></div>`;
+  $('#fs').onclick = () => run(async () => {
+    const g = k => $('#f-' + k).value, o = { id: e.id, name: g('name'), flower: g('flower'), bs: fromL(g('bs')), be: fromL(g('be')), cs: fromL(g('cs')), ce: fromL(g('ce')),
+      limit: +g('limit'), total: +g('total'), min: +g('min'), note: g('note'), coordsOpen: $('#f-co').checked };
+    await adm('save', { e: o }); toast('已儲存 🌸'); adminPage();
+  });
+}
+
+async function regs(e) {
+  const box = $('#r-' + e.id), d = await adm('regs', { id: e.id });
+  box.innerHTML = d.list.length ? d.list.map(r => `<div class="rg"><b>${esc(r.n)}</b> ×${r.c} <small>${esc(r.code)}</small>
+    <textarea data-id="${r.id}" placeholder="座標，一行一個">${esc(r.coords)}</textarea>
+    <div class="row"><button class="ghost" data-x="${r.id}">取消這筆登記</button></div></div>`).join('') + '<button class="wide" id="sc">儲存全部座標</button>' : '<p class="muted">還沒有人登記。</p>';
+  if (!d.list.length) return;
+  $('#sc').onclick = () => run(async () => { await adm('setCoords', { items: [...box.querySelectorAll('textarea')].map(t => ({ id: t.dataset.id, coords: t.value })) }); toast('座標已儲存 ✅'); });
+  box.querySelectorAll('[data-x]').forEach(b => b.onclick = () => run(async () => { if (confirm('取消這筆登記？')) { await adm('adminCancel', { rid: b.dataset.x }); regs(e); } }));
+}
+
+// ====== 路由 ======
+function route() {
+  const h = location.hash.slice(1);
+  app.onclick = null; pill();
+  run(async () => { if (h === 'admin') await adminPage(); else if (h.startsWith('e/')) await detail(h.slice(2)); else await home(); });
+  window.scrollTo(0, 0);
+}
+addEventListener('hashchange', route);
+route();
+</script>
+</body>
+</html>
