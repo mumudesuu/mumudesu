@@ -147,8 +147,8 @@ function pill() {
   $('#adminLink').textContent = token ? '👑 團主後台' : '團主登入';
 }
 
-const fm = s => s ? s.slice(5, 10).replace('-', '/') + ' ' + s.slice(11) : '';
-const win = e => fm(e.bs) + '–' + (e.be.slice(0, 10) === e.bs.slice(0, 10) ? e.be.slice(11) : fm(e.be));
+const fm = s => s ? s.slice(0, 10).replace(/-/g, '/') + ' ' + s.slice(11, 16) : ''; // 年/月/日 時:分（24 小時制，不顯示時區）
+const win = e => fm(e.bs) + '–' + (e.be.slice(0, 10) === e.bs.slice(0, 10) ? e.be.slice(11, 16) : fm(e.be));
 const CH = { '登記中': 'on', '已額滿': 'full', '流標': 'void', '尚未開始': 'soon' };
 const chip = e => `<span class="chip ${CH[e.status] || ''}">${e.status}</span>`;
 const opts = (n, sel) => Array.from({ length: n }, (_, i) => `<option ${i + 1 === sel ? 'selected' : ''}>${i + 1}</option>`).join('');
