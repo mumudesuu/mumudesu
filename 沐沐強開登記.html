@@ -60,6 +60,8 @@
   @keyframes card-in{to{opacity:1; transform:translateY(0) scale(1);}}
   .card:hover{transform:translateY(-3px); box-shadow:0 9px 0 rgba(39,97,72,.14);}
   .card h3{margin:0 0 6px;}
+  .card.ended{background:#F3EFE4; filter:grayscale(.5); color:#8A9A8F; cursor:default;}
+  .card.ended:hover{transform:none; box-shadow:var(--card-shadow);}
   section{padding:6px 18px 18px; margin-top:18px;}
   .chip{display:inline-block; font-family:"Zen Maru Gothic",sans-serif; font-size:12px; font-weight:800; padding:2px 10px; border-radius:999px; background:#EFEBE0; color:#7C6F55; vertical-align:middle;}
   .chip.on{background:var(--leaf); color:#fff;} .chip.full{background:var(--yellow); color:#7A5A00;}
@@ -171,7 +173,9 @@ async function home(pre) {
   app.className = 'grid'; if (!pre) app.innerHTML = '<p class="muted">載入中…</p>';
   const d = pre || await api('list');
   app.innerHTML = (d.notice ? `<div class="notice">${esc(d.notice).replace(/\n/g, '<br>')}</div>` : '') +
-    (d.events.length ? d.events.map(e => `<a class="card" href="#e/${e.id}"><h3>${esc(e.name)} ${chip(e)}</h3>
+    (d.events.length ? d.events.map(e => e.ended && !token
+      ? `<div class="card ended"><h3>${esc(e.name)} ${chip(e)}</h3><div class="muted">🌸 開花 ${win(e)}<br>活動已結束，無法查看內容</div></div>`
+      : `<a class="card" href="#e/${e.id}"><h3>${esc(e.name)} ${chip(e)}</h3>
       <div class="muted">🌸 開花 ${win(e)}<br>⏰ 停止登記 ${fm(e.ce)}</div>${meter(e)}${stats(e)}</a>`).join('') : '<p class="muted">目前沒有開團，請等團主公告 🌱</p>');
 }
 
@@ -235,8 +239,9 @@ function mePage() {
 async function detail(id, pre) {
   app.className = 'narrow'; if (!pre) app.innerHTML = '<p class="muted">載入中…</p>';
   let d;
-  try { d = pre || await api('get', me ? { id, u: { code: me.code, pin: me.pin } } : { id }); } // 一次連線取得活動與我的登記
-  catch (x) { if (me && /好友碼或安全碼/.test(x.message)) { setMe(null); toast('登入已失效，請重新登入', true); return detail(id); } throw x; }
+  try { d = pre || await api('get', { id, token, ...(me ? { u: { code: me.code, pin: me.pin } } : {}) }); } // 一次連線取得活動與我的登記
+  catch (x) { if (/已結束/.test(x.message)) { app.innerHTML = '<a class="back" href="#">‹ 全部開團</a><div class="notice">這個活動已經結束，無法查看內容。</div>'; return; }
+    if (me && /好友碼或安全碼/.test(x.message)) { setMe(null); toast('登入已失效，請重新登入', true); return detail(id); } throw x; }
   const e = d.event, canReg = e.open && e.remaining > 0, r = me && d.mine ? d.mine.reg : null;
   let mid = '';
   if (!me) mid = '<section id="auth"></section>';
@@ -283,8 +288,8 @@ async function adminPage() {
   <section><h3>🌸 開團</h3><div class="row" style="margin-top:0"><button id="new">＋ 新增開團</button></div><div id="form"></div>
   ${d.events.map(e => `<div class="rg"><b>${esc(e.name)}</b> ${chip(e)}<div class="muted">🌸 開花 ${win(e)}<br>📍 座標 ${fm(e.ca)} 開放　⏰ 停止登記 ${fm(e.ce)}<br>已領 ${e.claimed} / ${e.total} 朵（${e.people} 人），${e.min} 朵以下流標</div>
     <div class="row"><button class="ghost" data-a="regs" data-id="${e.id}">名單與座標</button><button class="ghost" data-a="edit" data-id="${e.id}">編輯</button>
-    <button class="ghost" data-a="go" data-id="${e.id}">前往登記頁</button><button class="danger" data-a="del" data-id="${e.id}">刪除</button></div>
-    <div id="r-${e.id}"></div></div>`).join('')}</section>`;
+    <button class="ghost" data-a="info" data-id="${e.id}">📋 複製強開資訊</button><button class="ghost" data-a="ac" data-id="${e.id}">📍 複製所有座標</button><button class="ghost" data-a="go" data-id="${e.id}">前往登記頁</button><button class="danger" data-a="del" data-id="${e.id}">刪除</button></div>
+    <div id="i-${e.id}"></div><div id="r-${e.id}"></div></div>`).join('')}</section>`;
   const byId = Object.fromEntries(d.events.map(e => [e.id, e]));
   $('#out').onclick = () => { logout(); route(); };
   $('#nts').onclick = () => run(async () => { await adm('setNotice', { text: $('#nt').value }); toast('公告已儲存'); });
@@ -293,6 +298,8 @@ async function adminPage() {
     run(async () => {
       if (b.dataset.a === 'edit') form(e);
       else if (b.dataset.a === 'go') location.hash = '#e/' + e.id;
+      else if (b.dataset.a === 'info') await info(e);
+      else if (b.dataset.a === 'ac') await allCoords(e);
       else if (b.dataset.a === 'del') { if (confirm('刪除「' + e.name + '」？')) { await adm('del', { id: e.id }); adminPage(); } }
       else if (b.dataset.a === 'regs') regs(e);
     }); };
@@ -326,6 +333,26 @@ function form(e) {
     const o = { id: e.id, name: $('#f-name').value, flower: $('#f-flower').value.trim(), bs: bsv(), limit: +$('#f-limit').value, total: +$('#f-total').value, min: +$('#f-min').value, note: $('#f-note').value };
     await adm('save', { e: o }); toast('已儲存 🌸'); adminPage();
   });
+}
+
+async function showCopy(e, text, msg) {
+  const box = $('#i-' + e.id);
+  box.innerHTML = '<textarea readonly style="min-height:190px;margin-top:10px"></textarea>';
+  const ta = box.querySelector('textarea'); ta.value = text;
+  let ok = false;
+  try { await navigator.clipboard.writeText(text); ok = true; } catch (x) {}
+  if (!ok) { ta.focus(); ta.select(); try { ok = document.execCommand('copy'); } catch (x) {} }
+  toast(ok ? msg : '請長按下方文字手動複製', !ok);
+}
+async function info(e) {
+  const d = await adm('regs', { id: e.id });
+  await showCopy(e, [e.name, '開花時間：' + fm(e.bs) + '–' + e.be.slice(11, 16), '', '特別感謝提供花瓣的皮友💖',
+    ...d.list.map(r => r.n + '+' + r.c), '', '備註：', '💬 請依照提供的座標進行採果', '💬 附近花苗花苞勿踩🌱', '💬 僅供群內使用勿轉發！！'].join('\n'), '已複製強開資訊 ✅');
+}
+async function allCoords(e) {
+  const d = await adm('allCoords', { id: e.id });
+  if (!d.list.length) { toast('還沒有分配座標，請先到「名單與座標」按「分配座標」', true); return; }
+  await showCopy(e, d.list.join('\n'), `已複製 ${d.list.length} 個座標 ✅`);
 }
 
 async function regs(e) {
