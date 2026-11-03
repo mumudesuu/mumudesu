@@ -239,7 +239,7 @@ async function detail(id) {
     ${e.open ? `<div class="row"><select id="nc">${opts(Math.min(e.limit, e.remaining + r.c), r.c)}</select><button id="sv">儲存顆數</button><button class="danger" id="cx">取消登記</button></div>` : '<p class="muted">登記已截止，無法再修改。</p>'}</section>`;
   else if (canReg) mid = `<section><h3>🌱 認領種植數量</h3><p class="muted">登入身分：${esc(me.name)}</p>
     <label>認領顆數<select id="ct">${opts(Math.min(e.limit, e.remaining), 1)}</select></label><div class="row"><button id="go">登記認領</button></div></section>`;
-  else mid = `<section><p class="muted">目前不開放登記（${e.status}）。</p></section>`;
+  else mid = `<section><p class="muted">${e.status === '資料有誤' ? '這個開團的時間資料有誤，請聯絡團主。' : e.status === '已額滿' ? '名額已經被認領完了。' : e.status === '尚未開始' ? '登記還沒開始。' : '登記已截止。'}</p></section>`;
 
   app.innerHTML = `<a class="back" href="#">‹ 全部開團</a>
   <div class="panel" style="padding:16px 18px"><h2>${esc(e.name)} ${chip(e)}</h2>
