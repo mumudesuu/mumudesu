@@ -167,9 +167,9 @@ function copy(t) {
 document.addEventListener('click', e => { const b = e.target.closest('[data-copy]'); if (b) copy(decodeURIComponent(b.dataset.copy)); });
 
 // ====== 參與者頁面 ======
-async function home() {
-  app.className = 'grid'; app.innerHTML = '<p class="muted">載入中…</p>';
-  const d = await api('list');
+async function home(pre) {
+  app.className = 'grid'; if (!pre) app.innerHTML = '<p class="muted">載入中…</p>';
+  const d = pre || await api('list');
   app.innerHTML = (d.notice ? `<div class="notice">${esc(d.notice).replace(/\n/g, '<br>')}</div>` : '') +
     (d.events.length ? d.events.map(e => `<a class="card" href="#e/${e.id}"><h3>${esc(e.name)} ${chip(e)}</h3>
       <div class="muted">🌸 開花 ${win(e)}<br>⏰ 停止登記 ${fm(e.ce)}</div>${meter(e)}${stats(e)}</a>`).join('') : '<p class="muted">目前沒有開團，請等團主公告 🌱</p>');
@@ -183,29 +183,38 @@ function coordsHtml(t) {
 }
 
 function authBox(ev, done) {
-  let mode = 'up';
+  let mode = 'in'; // 預設先顯示登入，註冊在下方
   const box = document.createElement('div');
   const draw = () => {
-    const up = mode === 'up', canClaim = up && ev && ev.open && ev.remaining > 0;
-    box.innerHTML = `<h3>${up ? '🌱 註冊並登記' : '🔑 登入'}</h3>
-    <p class="muted">${up ? '第一次使用請註冊，之後只要用「好友碼 + 安全碼」登入。' : '請輸入註冊時填的好友碼與安全碼。'}</p>
+    const up = mode === 'up', canClaim = up && ev && ev.open && ev.remaining > 0, label = up ? (canClaim ? '註冊並登記認領' : '註冊') : '登入';
+    box.innerHTML = `<h3>${up ? '🌱 註冊會員' : '🔑 皮友登入'}</h3>
+    <p class="muted">${up ? '第一次使用請註冊，之後只要用「好友碼 + 安全碼」登入。' : '請輸入好友碼與安全碼。'}</p>
     ${up ? '<label>遊戲暱稱<input id="a-n" maxlength="20" autocomplete="off"></label>' : ''}
     <label>好友碼（12 碼）<input id="a-c" inputmode="numeric" maxlength="14" placeholder="1234 5678 9012" autocomplete="off"></label>
     <label>安全碼（4 碼數字${up ? '，自己設定，請記住' : ''}）<input id="a-p" type="password" inputmode="numeric" maxlength="4" autocomplete="off"></label>
     ${canClaim ? `<label>認領顆數<select id="a-k">${opts(Math.min(ev.limit, ev.remaining), 1)}</select></label>` : ''}
-    <div class="row"><button id="a-go">${up ? (canClaim ? '註冊並登記認領' : '註冊') : '登入'}</button><button class="ghost" id="a-sw">${up ? '我已經註冊過，直接登入' : '第一次來？我要註冊'}</button></div>`;
+    <div class="row"><button id="a-go">${label}</button></div>
+    <div class="row"><button class="ghost" id="a-sw">${up ? '已經是會員？直接登入' : '不是會員？我要註冊'}</button></div>`;
     $('#a-sw', box).onclick = () => { mode = up ? 'in' : 'up'; draw(); };
-    $('#a-go', box).onclick = () => run(async () => {
-      const code = $('#a-c', box).value.replace(/\D/g, ''), pin = $('#a-p', box).value;
-      if (up) {
-        const r = await api('signup', { name: $('#a-n', box).value, code, pin });
-        setMe({ code, pin, name: r.name });
-        if ($('#a-k', box)) {
-          try { await memApi('register', { id: ev.id, count: $('#a-k', box).value }); toast('註冊並登記成功 🌸'); }
-          catch (x) { toast('註冊成功，但登記失敗：' + x.message, true); }
-        } else toast('註冊成功 🌸');
-      } else { const r = await api('login', { code, pin }); setMe({ code, pin, name: r.name }); toast('登入成功 🌼'); }
-      done();
+    const go = $('#a-go', box);
+    go.onclick = () => run(async () => {
+      go.disabled = true; go.textContent = up ? '送出中…' : '登入中…';
+      try {
+        const code = $('#a-c', box).value.replace(/\D/g, ''), pin = $('#a-p', box).value;
+        if (up) {
+          const r = await api('signup', { name: $('#a-n', box).value, code, pin });
+          setMe({ code, pin, name: r.name });
+          if ($('#a-k', box)) {
+            try { await memApi('register', { id: ev.id, count: $('#a-k', box).value }); toast('註冊並登記成功 🌸'); }
+            catch (x) { toast('註冊成功，但登記失敗：' + x.message, true); }
+          } else toast('註冊成功 🌸');
+          await done();
+        } else {
+          const u = { code, pin }, r = ev ? await api('get', { id: ev.id, u }) : await api('list', { u }); // 一次連線就完成登入並取得畫面資料
+          setMe({ code, pin, name: r.name }); toast('登入成功 🌼');
+          await done(r);
+        }
+      } finally { go.disabled = false; go.textContent = label; }
     });
   };
   draw();
@@ -220,18 +229,15 @@ function mePage() {
     return;
   }
   app.innerHTML = '<section id="auth"></section>';
-  $('#auth').appendChild(authBox(null, () => { if (location.hash) location.hash = ''; else route(); }));
+  $('#auth').appendChild(authBox(null, r => { history.replaceState(null, '', location.pathname + location.search); return home(r); })); // 登入完直接進入開團列表
 }
 
-async function detail(id) {
-  app.className = 'narrow'; app.innerHTML = '<p class="muted">載入中…</p>';
-  const d = await api('get', { id }), e = d.event, canReg = e.open && e.remaining > 0;
-  let mine = null;
-  if (me) {
-    try { mine = await memApi('mine', { id }); }
-    catch (x) { if (/好友碼或安全碼/.test(x.message)) { setMe(null); toast('登入已失效，請重新登入', true); } else throw x; }
-  }
-  const r = mine && mine.reg;
+async function detail(id, pre) {
+  app.className = 'narrow'; if (!pre) app.innerHTML = '<p class="muted">載入中…</p>';
+  let d;
+  try { d = pre || await api('get', me ? { id, u: { code: me.code, pin: me.pin } } : { id }); } // 一次連線取得活動與我的登記
+  catch (x) { if (me && /好友碼或安全碼/.test(x.message)) { setMe(null); toast('登入已失效，請重新登入', true); return detail(id); } throw x; }
+  const e = d.event, canReg = e.open && e.remaining > 0, r = me && d.mine ? d.mine.reg : null;
   let mid = '';
   if (!me) mid = '<section id="auth"></section>';
   else if (r) mid = `<section><h3>🌼 我的登記</h3><p><b>${esc(me.name)}</b> 認領 <b>${r.c}</b> 朵</p>
@@ -249,7 +255,7 @@ async function detail(id) {
   ${mid}
   <section><h3>🌷 參與名單</h3>${d.people.length ? '<div class="people">' + d.people.map(p => `<span>${esc(p.n)} ×${p.c}</span>`).join('') + '</div>' : '<p class="muted">還沒有人登記。</p>'}</section>`;
 
-  if (!me) $('#auth').appendChild(authBox(e, () => detail(id)));
+  if (!me) $('#auth').appendChild(authBox(e, r => detail(id, r)));
   if ($('#go')) $('#go').onclick = () => run(async () => { await memApi('register', { id, count: $('#ct').value }); toast('登記成功 🌸'); detail(id); });
   if ($('#sv')) {
     $('#sv').onclick = () => run(async () => { await memApi('update', { id, count: $('#nc').value }); toast('已更新顆數'); detail(id); });
